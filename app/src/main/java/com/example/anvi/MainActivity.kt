@@ -5,63 +5,125 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+data class ChatMessage(
+    val text: String,
+    val fromAnvi: Boolean
+)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AnviApp()
+            AnviChatScreen()
         }
     }
 }
 
 @Composable
-fun AnviApp() {
-    var response by remember {
-        mutableStateOf("System ready. Tap the button to test ANVI.")
+fun AnviChatScreen() {
+    var input by remember { mutableStateOf("") }
+    var messages by remember {
+        mutableStateOf(
+            listOf(
+                ChatMessage(
+                    "Hello! I'm ANVI. My chat interface is ready. My AI connection still needs to be configured.",
+                    true
+                )
+            )
+        )
     }
 
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "ANVI",
+                style = MaterialTheme.typography.headlineLarge
+            )
+
+            Text(
+                text = "Personal AI Assistant",
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .weight(1f)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = "ANVI",
-                    style = MaterialTheme.typography.headlineLarge
-                )
+                items(messages) { message ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (message.fromAnvi)
+                            MaterialTheme.colorScheme.secondaryContainer
+                        else
+                            MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = (if (message.fromAnvi) "ANVI: " else "You: ") +
+                                message.text,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            }
 
-                Text(
-                    text = "Android Controller",
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                Text(
-                    text = response,
-                    modifier = Modifier.padding(top = 24.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Ask ANVI a question") },
+                    maxLines = 3
                 )
 
                 Button(
                     onClick = {
-                        response = "Hello! ANVI is running. Button test successful."
+                        val question = input.trim()
+                        if (question.isNotEmpty()) {
+                            messages = messages + ChatMessage(question, false) +
+                                ChatMessage(
+                                    "I received your message, but my AI brain is not connected yet.",
+                                    true
+                                )
+                            input = ""
+                        }
                     },
-                    modifier = Modifier.padding(top = 24.dp)
+                    modifier = Modifier.padding(start = 8.dp)
                 ) {
-                    Text("Test ANVI")
+                    Text("Send")
                 }
             }
         }
