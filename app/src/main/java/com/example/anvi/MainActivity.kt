@@ -11,16 +11,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             AnviApp()
         }
@@ -29,10 +27,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AnviApp() {
+    var response by remember {
+        mutableStateOf("System ready. Tap the button to test ANVI.")
+    }
+
     MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Surface(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -40,7 +40,6 @@ fun AnviApp() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
                 Text(
                     text = "ANVI",
                     style = MaterialTheme.typography.headlineLarge
@@ -52,13 +51,13 @@ fun AnviApp() {
                 )
 
                 Text(
-                    text = "System ready",
-                    modifier = Modifier.padding(top = 16.dp)
+                    text = response,
+                    modifier = Modifier.padding(top = 24.dp)
                 )
 
                 Button(
                     onClick = {
-                        // Safe test button
+                        response = "Hello! ANVI is running. Button test successful."
                     },
                     modifier = Modifier.padding(top = 24.dp)
                 ) {
