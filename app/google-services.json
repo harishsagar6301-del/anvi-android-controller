@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "165874287533",
+    "project_id": "anvi-8ab53",
+    "storage_bucket": "anvi-8ab53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165874287533:android:1befdb6a1c8d6396a9d724",
+        "android_client_info": {
+          "package_name": "com.example.anvi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJQ8U0oAa66m6o-0VFoCJNVR1HDoEZy7k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
