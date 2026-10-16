@@ -4,34 +4,15 @@ package com.example.anvi
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -40,6 +21,8 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -47,31 +30,51 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val model = Firebase.ai(
-            backend = GenerativeBackend.googleAI()
-        ).generativeModel("gemini-3.8-flash")
+        try {
+            // Initialize App Check BEFORE using Firebase AI.
+            FirebaseAppCheck.getInstance()
+                .installAppCheckProviderFactory(
+                    DebugAppCheckProviderFactory.getInstance()
+                )
 
-        setContent {
-            MaterialTheme {
-                AnviChatScreen(
-                    onSendMessage = { prompt, onReply ->
-                        lifecycleScope.launch {
-                            try {
-                                val response = model.generateContent(prompt)
-                                onReply(
-                                    response.text
-                                        ?: "I couldn't generate a text reply. Please try again."
-                                )
-                            } catch (error: Exception) {
-                                onReply(
-                                    "AI connection failed: " +
-                                        (error.message
-                                            ?: "Check your internet and Firebase setup.")
-                                )
+            // Connect to the Gemini Developer API.
+            val model = Firebase.ai(
+                backend = GenerativeBackend.googleAI()
+            ).generativeModel("gemini-3.8-flash")
+
+            setContent {
+                MaterialTheme {
+                    AnviChatScreen(
+                        onSendMessage = { prompt, onReply ->
+                            lifecycleScope.launch {
+                                try {
+                                    val response =
+                                        model.generateContent(prompt)
+
+                                    onReply(
+                                        response.text
+                                            ?: "ANVI couldn't generate a reply. Please try again."
+                                    )
+                                } catch (e: Exception) {
+                                    onReply(
+                                        "AI connection failed: " +
+                                            (e.message
+                                                ?: "Check Firebase and internet settings.")
+                                    )
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            setContent {
+                MaterialTheme {
+                    Text(
+                        text = "ANVI startup error: ${e.message}",
+                        modifier = Modifier.padding(20.dp)
+                    )
+                }
             }
         }
     }
@@ -95,7 +98,7 @@ private fun AnviChatScreen(
     val messages = remember {
         mutableStateListOf(
             ChatMessage(
-                "Hello! I'm ANVI. My AI brain is ready to connect. What can I help you with?",
+                "Hello! I'm ANVI. Ask me anything.",
                 false
             )
         )
@@ -106,7 +109,7 @@ private fun AnviChatScreen(
     fun sendMessage() {
         val question = input.trim()
 
-        if (question.isBlank() || loading) return
+        if (question.isEmpty() || loading) return
 
         messages.add(ChatMessage(question, true))
         input = ""
@@ -121,10 +124,9 @@ private fun AnviChatScreen(
 
         val prompt = """
             You are ANVI, a helpful personal AI assistant.
-            Answer accurately, clearly, and naturally.
-            You may reply in Telugu when the user requests it.
-            Never claim to have performed phone actions unless
-            those actions are actually implemented.
+            Answer clearly, accurately, and naturally.
+            Reply in Telugu when the user asks for Telugu.
+            Never claim to control a phone feature unless it is implemented.
 
             Recent conversation:
             $conversation
@@ -157,11 +159,11 @@ private fun AnviChatScreen(
         )
 
         Text(
-            text = "Personal AI Assistant",
+            text = "Your Personal AI Assistant",
             style = MaterialTheme.typography.bodyLarge
         )
 
-        Spacer(modifier = Modifier.padding(top = 12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         LazyColumn(
             state = listState,
@@ -185,12 +187,12 @@ private fun AnviChatScreen(
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
                             MaterialTheme.colorScheme.secondaryContainer
-                        }
+                        },
+                        modifier = Modifier.widthIn(max = 300.dp)
                     ) {
                         Text(
                             text = message.text,
-                            modifier = Modifier.padding(14.dp),
-                            style = MaterialTheme.typography.bodyLarge
+                            modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
@@ -201,10 +203,13 @@ private fun AnviChatScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
                         Text(
-                            text = " ANVI is thinking...",
-                            modifier = Modifier.padding(8.dp)
+                            text = "ANVI is thinking...",
+                            modifier = Modifier.padding(start = 8.dp)
                         )
                     }
                 }
@@ -219,7 +224,9 @@ private fun AnviChatScreen(
                 value = input,
                 onValueChange = { input = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Ask ANVI anything...") },
+                placeholder = {
+                    Text("Message ANVI...")
+                },
                 enabled = !loading,
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Send
