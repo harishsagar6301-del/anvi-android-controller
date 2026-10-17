@@ -11,7 +11,7 @@
         android:supportsRtl="true">
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.anvi.MainActivity"
             android:exported="true">
 
             <intent-filter>
@@ -20,7 +20,5 @@
             </intent-filter>
 
         </activity>
-
     </application>
-
 </manifest>
