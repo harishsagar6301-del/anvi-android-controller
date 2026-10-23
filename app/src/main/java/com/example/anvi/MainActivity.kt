@@ -34,6 +34,7 @@ import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.initialize
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -101,8 +102,7 @@ class MainActivity : ComponentActivity() {
             speechLauncher.launch(intent)
         } catch (e: Exception) {
             voiceResult?.invoke(
-                "Voice recognition isn't available. " +
-                    "Check whether a speech recognition app is installed."
+                "Voice recognition isn't available. Check whether a speech recognition app is installed."
             )
         }
     }
@@ -130,21 +130,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         try {
-            // Keep the existing Firebase App Check debug integration.
+            // Initialize Firebase before using App Check or Firebase AI.
+            Firebase.initialize(context = this)
+
+            // Use the debug provider for development builds.
             FirebaseAppCheck.getInstance()
                 .installAppCheckProviderFactory(
                     DebugAppCheckProviderFactory.getInstance()
                 )
 
-            // Keep the existing Firebase AI Logic connection.
             val model = Firebase.ai(
                 backend = GenerativeBackend.googleAI()
             ).generativeModel("gemini-3.8-flash")
 
             setContent {
-                var darkMode by remember {
-                    mutableStateOf(true)
-                }
+                var darkMode by remember { mutableStateOf(true) }
 
                 MaterialTheme(
                     colorScheme = if (darkMode) {
@@ -227,34 +227,19 @@ private fun AnviScreen(
 
     val messages = remember {
         mutableStateListOf(
-            ChatMessage(
-                "Hello! I'm ANVI. Ask me anything.",
-                false
-            )
+            ChatMessage("Hello! I'm ANVI. Ask me anything.", false)
         )
     }
 
     val listState = rememberLazyListState()
 
-    val background = if (darkMode) {
-        DarkBackground
-    } else {
-        LightBackground
-    }
-
+    val background =
+        if (darkMode) DarkBackground else LightBackground
     val panel = if (darkMode) DarkPanel else LightPanel
-
-    val assistantBubble = if (darkMode) {
-        Color(0xFF111C2A)
-    } else {
-        Color(0xFFE5EEF5)
-    }
-
-    val foreground = if (darkMode) {
-        Color(0xFFE7F1FA)
-    } else {
-        Ink
-    }
+    val assistantBubble =
+        if (darkMode) Color(0xFF111C2A) else Color(0xFFE5EEF5)
+    val foreground =
+        if (darkMode) Color(0xFFE7F1FA) else Ink
 
     fun sendMessage() {
         val question = input.trim()
@@ -303,7 +288,6 @@ private fun AnviScreen(
             .imePadding()
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        // Top header
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -317,9 +301,7 @@ private fun AnviScreen(
                 },
                 modifier = Modifier.size(52.dp)
             ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = "A",
                         color = Cyan,
@@ -347,22 +329,16 @@ private fun AnviScreen(
                 )
             }
 
-            TextButton(
-                onClick = { showHistory = true }
-            ) {
+            TextButton(onClick = { showHistory = true }) {
                 Text("History")
             }
-
-            TextButton(
-                onClick = { showSettings = true }
-            ) {
+            TextButton(onClick = { showSettings = true }) {
                 Text("Settings")
             }
         }
 
         Spacer(Modifier.height(14.dp))
 
-        // Connection status label
         Surface(
             shape = RoundedCornerShape(50),
             color = panel,
@@ -382,11 +358,7 @@ private fun AnviScreen(
                 )
                 Spacer(Modifier.width(9.dp))
                 Text(
-                    text = if (loading) {
-                        "ANVI IS THINKING"
-                    } else {
-                        "READY TO CHAT"
-                    },
+                    text = if (loading) "ANVI IS THINKING" else "READY TO CHAT",
                     fontSize = 11.sp,
                     letterSpacing = 1.2.sp,
                     color = foreground,
@@ -403,7 +375,6 @@ private fun AnviScreen(
 
         Spacer(Modifier.height(14.dp))
 
-        // Conversation
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -422,11 +393,7 @@ private fun AnviScreen(
                     }
                 ) {
                     Text(
-                        text = if (message.isUser) {
-                            "YOU"
-                        } else {
-                            "ANVI"
-                        },
+                        text = if (message.isUser) "YOU" else "ANVI",
                         color = if (darkMode) Cyan else Color(0xFF087E99),
                         fontSize = 10.sp,
                         letterSpacing = 1.3.sp,
@@ -441,16 +408,8 @@ private fun AnviScreen(
                         shape = RoundedCornerShape(
                             topStart = 17.dp,
                             topEnd = 17.dp,
-                            bottomStart = if (message.isUser) {
-                                17.dp
-                            } else {
-                                4.dp
-                            },
-                            bottomEnd = if (message.isUser) {
-                                4.dp
-                            } else {
-                                17.dp
-                            }
+                            bottomStart = if (message.isUser) 17.dp else 4.dp,
+                            bottomEnd = if (message.isUser) 4.dp else 17.dp
                         ),
                         color = if (message.isUser) {
                             if (darkMode) DarkUserBubble
@@ -472,25 +431,19 @@ private fun AnviScreen(
 
             if (loading) {
                 item {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
                             color = Cyan
                         )
                         Spacer(Modifier.width(10.dp))
-                        Text(
-                            text = "ANVI is thinking...",
-                            color = foreground
-                        )
+                        Text("ANVI is thinking...", color = foreground)
                     }
                 }
             }
         }
 
-        // Message composer
         Surface(
             shape = RoundedCornerShape(22.dp),
             color = panel,
@@ -504,9 +457,7 @@ private fun AnviScreen(
                     value = input,
                     onValueChange = { input = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text("Message ANVI...")
-                    },
+                    placeholder = { Text("Message ANVI...") },
                     enabled = !loading,
                     singleLine = false,
                     maxLines = 4,
@@ -553,15 +504,12 @@ private fun AnviScreen(
         Spacer(Modifier.height(7.dp))
 
         Text(
-            text = "ANVI AI  •  Check important information",
+            text = "ANVI AI • Check important information",
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 3.dp),
-            color = if (darkMode) {
-                Color(0xFF73869A)
-            } else {
-                Color(0xFF65788A)
-            },
+            color = if (darkMode) Color(0xFF73869A)
+                    else Color(0xFF65788A),
             fontSize = 10.sp
         )
     }
@@ -579,11 +527,7 @@ private fun AnviScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (darkMode) {
-                                "Dark mode"
-                            } else {
-                                "Light mode"
-                            },
+                            text = if (darkMode) "Dark mode" else "Light mode",
                             modifier = Modifier.weight(1f)
                         )
                         Switch(
@@ -599,52 +543,39 @@ private fun AnviScreen(
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = { showSettings = false }
-                ) {
+                TextButton(onClick = { showSettings = false }) {
                     Text("Done")
                 }
-            },
-            containerColor = panel,
-            titleContentColor = foreground,
-            textContentColor = foreground
+            }
         )
     }
 
     if (showHistory) {
         AlertDialog(
             onDismissRequest = { showHistory = false },
-            title = { Text("Chat History") },
+            title = { Text("Current chat") },
             text = {
                 if (messages.isEmpty()) {
                     Text("No messages yet.")
                 } else {
                     LazyColumn(
-                        modifier = Modifier.heightIn(max = 350.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.heightIn(max = 350.dp)
                     ) {
                         items(messages) { message ->
                             Text(
-                                text = (if (message.isUser) {
-                                    "You: "
-                                } else {
-                                    "ANVI: "
-                                }) + message.text
+                                text = (if (message.isUser) "You: " else "ANVI: ") +
+                                    message.text,
+                                modifier = Modifier.padding(vertical = 5.dp)
                             )
                         }
                     }
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = { showHistory = false }
-                ) {
+                TextButton(onClick = { showHistory = false }) {
                     Text("Close")
                 }
-            },
-            containerColor = panel,
-            titleContentColor = foreground,
-            textContentColor = foreground
+            }
         )
     }
 }
