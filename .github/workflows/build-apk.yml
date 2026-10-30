@@ -1,3 +1,4 @@
+
 name: Build ANVI APK
 
 on:
@@ -27,6 +28,10 @@ jobs:
 
       - name: Build Debug APK
         run: gradle assembleDebug --stacktrace --info
+
+      - name: Print debug signing fingerprint
+        run: gradle :app:signingReport
+
       - name: Upload ANVI APK
         uses: actions/upload-artifact@v4
         with:
